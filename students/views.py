@@ -1,5 +1,4 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from .models import Student, CustomUser
 def login_view(request):
@@ -20,18 +19,23 @@ def login_view(request):
 
 
 def logout_view(request):
-    logout(request)
+    request.session.flush()
     return redirect('login')
-@login_required(login_url='/login/')
 def dashboard(request):
-    students = Student.objects.filter(user=request.user)
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return redirect('login')
+    students = Student.objects.filter(user_id=user_id)
     return render(request, 'dashboard.html', {'students': students})
 
 @login_required(login_url='/login/')
 def create_student(request):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return redirect('login')
     if request.method == 'POST':
         Student.objects.create(
-            user=request.user,
+            user_id=user_id,
             name=request.POST['name'],
             age=request.POST['age'],
             course=request.POST['course']
